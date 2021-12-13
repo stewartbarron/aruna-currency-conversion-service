@@ -1,6 +1,10 @@
 package com.github.stewartbarron.aruna.currencyconversionservice.controller;
 
 import com.github.stewartbarron.aruna.currencyconversionservice.model.CurrencyConversion;
+import com.github.stewartbarron.aruna.currencyconversionservice.proxy.CurrencyExchangeProxy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -9,11 +13,15 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Map;
 
 @RestController
 public class CurrencyConversionController {
+
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    @Autowired
+    private CurrencyExchangeProxy proxy;
+
     @GetMapping("/currency-conversion/from/{from}/to/{to}/quantity/{quantity}")
     public CurrencyConversion calculateCurrencyConversion(
             @PathVariable String from,
@@ -35,6 +43,20 @@ public class CurrencyConversionController {
             from, to, quantity,
             currencyConversion.getConversionMultiple(),
             quantity.multiply(currencyConversion.getConversionMultiple()),
-            currencyConversion.getEnvironment());
+            currencyConversion.getEnvironment() + " - " + "rest template");
+    }
+
+    @GetMapping("/currency-conversion-feign/from/{from}/to/{to}/quantity/{quantity}")
+    public CurrencyConversion calculateCurrencyConversionFeign(
+            @PathVariable String from,
+            @PathVariable String to,
+            @PathVariable BigDecimal quantity
+    ) {
+        CurrencyConversion response = proxy.retrieveCurrencyConversion(from, to);
+
+        logger.info("{}", response);
+
+        return new CurrencyConversion(response.getId(), from, to, response.getConversionMultiple(), quantity,
+                quantity.multiply(response.getConversionMultiple()), response.getEnvironment() + " - " + "feign");
     }
 }
