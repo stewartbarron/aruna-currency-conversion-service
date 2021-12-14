@@ -3,6 +3,9 @@ spring:
     name: currency-conversion
   config:
     import: optional:configserver:http://localhost:8888
+  sleuth:
+    sampler:
+      probablity: 1
 
 server:
   port: 8100
